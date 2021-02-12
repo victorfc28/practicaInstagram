@@ -1,60 +1,50 @@
 <?php
 session_start();
 require_once '../BD/connecta_db_persistent.php';
-if (isset($_SESSION["usuario"])) {
-    header("Location: ./mainPage.php");
-} else {
-    if (isset($_POST['nombre'])) {
-		if (isset($_POST['nombre']) && isset($_POST['pass'])) {
+if (isset($_GET["mail"]) && isset($_GET["code"])) {
+    
+    $sql = 'SELECT resetPass, resetPassExpiry FROM `users` WHERE resetPassCode = :code AND mail= :mail';
+    $preparada = $db->prepare($sql);
+    $preparada->execute(array(':code' => $_GET["code"],
+                                ':mail' => $_GET["mail"]));
+    $result = $preparada->fetch(PDO::FETCH_ASSOC);
 
-			$sql = 'SELECT username FROM `users` WHERE username = :nombre';
-			$preparada = $db->prepare($sql);
-			$preparada->execute(array(':nombre' => $_POST['nombre']));
-			$result = $preparada->fetch(PDO::FETCH_ASSOC);
-			if($result !=false)
-			{
-				echo'Este Usuario ya existe';
-			}
-			else
-			{
-				if($_POST['pass'] == $_POST['vpass'])
-				{
-					$firstname = $_POST['fname'];
-					$lastName= $_POST['sName'];
-					$mail = $_POST['mail'];
-					$nombre = $_POST['nombre'];
-					$code = hash("sha256",rand());
-					$sql = 'INSERT INTO users (mail,username,passhash,userFirstName,userLastName,creationDate,lastSignIn,removeDate,activado,activationCode) VALUES (:mail,:nombre,:passhash,:Fname,:Lname,sysdate(),:LastSignIn,:RemoveDate,:Activado,:activationCode)';
-					$preparada = $db->prepare($sql);
-					$preparada->execute(array(':mail' => $mail,
-											':nombre' => $nombre,
-											':passhash' => password_hash($_POST['pass'],PASSWORD_DEFAULT),
-											':Fname' => $firstname,
-											':Lname' => $lastName,
-											':LastSignIn' => null,
-											':RemoveDate' => null,
-											':Activado' => 0,
-											'activationCode' => $code));
-					if($preparada !=false)
-					{
-						$firstname = $_POST['fname'];
-						$link = "http://localhost/php/Practica_Instagram/pages/verifyaccount.php?code=".$code."&mail=".$mail;
-						require_once'./sendMail.php';
-						//header("Location: ../index.php");
-						echo'Registro correcto';
-					}			
-				}
-				else
-				{
-					echo'Las contraseñas no coinciden.';
-				}
-			}
-
-
-
-
+    if($result !=false)
+	{
+		if($result["resetPass"] == 0 || $result["resetPassExpiry"]<date('Y-m-d H:i:s'))
+		{
+			echo'El link a caducado.';
+		}
+		else
+		{
+			echo'puedes cambiar la contraseña'; 
+			
+		}       
     }
+	else	echo'No tienes permiso para cambiar tu contraseña.';
+	
+	
+	
+
+
 }
+else if(isset($_POST["newpassword"]) && isset($_POST["rpassword"]))
+{
+	if($_POST["newpassword"] === $_POST["rpassword"])
+	{
+		$sql = 'UPDATE users SET resetPass=0, resetPassExpiry=null, resetPassCode=null, passhash = :pass WHERE mail=:mail';
+		$preparada = $db->prepare($sql);
+		$preparada->execute(array(':mail' => $_POST["mail"],
+									':pass' => password_hash($_POST['newpassword'],PASSWORD_DEFAULT)));
+	}
+	else
+	{
+		echo'Las contraseñas no coinciden.'; 
+	}
+}
+else
+{
+    header("Location: ../index.php");
 }
 ?>
 <!DOCTYPE html>
@@ -97,31 +87,18 @@ if (isset($_SESSION["usuario"])) {
 					</span>
 
 					<span class="login100-form-title p-b-34 p-t-27">
-						Registro de usuario
+						Reset Password
 					</span>
-
-					<div class="wrap-input100 validate-input" data-validate = "Enter username">
-						<input class="input100" type="text" name="nombre" placeholder="Username">
+					<div class="wrap-input100 validate-input" data-validate = "Enter new password">
+						<input class="input100" type="password" name="newpassword" placeholder="Password">
 					</div>
-					<div class="wrap-input100 validate-input" data-validate = "Enter mail">
-						<input class="input100" type="text" name="mail" placeholder="Mail">
+                    <div class="wrap-input100 validate-input" data-validate = "repeat password">
+						<input class="input100" type="password" name="rpassword" placeholder="Repeat Password">
 					</div>
-					<div class="wrap-input100 validate-input" data-validate = "Enter First Name">
-						<input class="input100" type="text" name="fname" placeholder="First Name">
-					</div>
-					<div class="wrap-input100 validate-input" data-validate = "Enter Second Name">
-						<input class="input100" type="text" name="sName" placeholder="Second Name">
-					</div>
-					<div class="wrap-input100 validate-input" data-validate="Enter password">
-						<input class="input100" type="password" name="pass" placeholder="Password">
-					</div>
-					<div class="wrap-input100 validate-input" data-validate="Enter validate password">
-						<input class="input100" type="password" name="vpass" placeholder="Validate Password">
-					</div>
-
+						<input class="ihidden" type="hidden" name="mail" value=<?php if(isset($_GET["mail"])) echo '"'.$_GET["mail"].'"';?>>
 					<div class="container-login100-form-btn">
-						<button class="login100-form-btn">
-							Registrarse
+						<button class="btn btn-primary">
+							Reset
 						</button>
 					</div>
 

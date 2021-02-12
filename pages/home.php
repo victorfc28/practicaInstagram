@@ -49,7 +49,7 @@ if (isset($_SESSION["usuario"])) {
 						Inicio
 					</span>
 					<div>Esta página web está en desarrollo</div>
-					<a class="login100-form-btn"href="./logout.php">
+					<a class="btn btn-danger logout"href="./logout.php">
 							LogOut
 						</a>
 			</div>
