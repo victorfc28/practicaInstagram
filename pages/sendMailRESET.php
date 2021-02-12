@@ -14,7 +14,7 @@
     
     //Credencials del compte GMAIL
     $mail2->Username = 'victorfabregascastro@gmail.com';
-    $mail2->Password = 'Fandess123.';
+    $mail2->Password = '';
 
     //Dades del correu electrònic
     $mail2->SetFrom('emissor@gmail.com','Test');
